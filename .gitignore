@@ -1,0 +1,14 @@
+# 本地凭据与运行时文件，切勿提交
+creds.json
+last_host.json
+autologin.log
+launchd.err
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 系统
+.DS_Store
