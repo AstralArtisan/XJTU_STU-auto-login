@@ -52,6 +52,7 @@ python srun_login.py install
 | `python srun_login.py status` | 查询当前在线状态 |
 | `python srun_login.py logout` | 注销下线 |
 | `python srun_login.py discover` | 仅探测当前网络的门户地址（排查用） |
+| `python srun_login.py log` | 查看自动登录日志（`log 50` 看末 50 行 / `log -f` 实时跟随 / `log clear` 清空） |
 | `python srun_login.py install` | 安装开机自启 |
 | `python srun_login.py uninstall` | 移除开机自启 |
 | `python srun_login.py auto` | 自启调度内部调用（手动一般用不到） |

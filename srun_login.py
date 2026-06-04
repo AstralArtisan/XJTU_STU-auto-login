@@ -9,6 +9,7 @@
   status     查询在线状态
   discover   仅探测当前网络的门户地址（调试用）
   auto       供自启调度调用：判断网段→登录→写日志（已在线静默退出）
+  log        查看自动登录日志（log [N] 看末 N 行 / log -f 实时跟随 / log clear 清空）
   install    注册开机自启（macOS=LaunchAgent / Windows=任务计划 / Linux=systemd）
   uninstall  移除开机自启
 """
@@ -334,6 +335,41 @@ def cmd_auto(cfg):
     _log("[%s] 多次尝试后仍失败" % ip)
     return 1
 
+# ---------- log：查看自动登录日志 ----------
+def cmd_log(args):
+    follow = False
+    n = 30
+    for a in args:
+        if a in ("-f", "--follow", "follow"):
+            follow = True
+        elif a == "clear":
+            open(_LOG, "w").close()
+            print("已清空日志：%s" % _LOG); return 0
+        elif a.isdigit():
+            n = int(a)
+    if not os.path.exists(_LOG) or os.path.getsize(_LOG) == 0:
+        print("暂无日志（还没触发过自动登录，或已在线时静默跳过）。\n日志文件：%s" % _LOG)
+        return 0
+    with open(_LOG, encoding="utf-8", errors="ignore") as f:
+        lines = f.readlines()
+    sys.stdout.write("".join(lines[-n:]))
+    if not lines[-1].endswith("\n"):
+        sys.stdout.write("\n")
+    if follow:
+        print("--- 实时跟随中（Ctrl-C 退出）---")
+        try:
+            with open(_LOG, encoding="utf-8", errors="ignore") as f:
+                f.seek(0, os.SEEK_END)
+                while True:
+                    line = f.readline()
+                    if line:
+                        sys.stdout.write(line); sys.stdout.flush()
+                    else:
+                        time.sleep(1.0)
+        except KeyboardInterrupt:
+            print()
+    return 0
+
 # ---------- install / uninstall：跨平台开机自启 ----------
 LABEL = "com.xjtu.autologin"          # macOS LaunchAgent label
 TASK  = "XJTU_STU-auto-login"         # Windows 计划任务名
@@ -529,6 +565,8 @@ def main():
         return cmd_uninstall()
     if cmd == "auto":
         return cmd_auto(cfg)
+    if cmd == "log":
+        return cmd_log(sys.argv[2:])
 
     user, pwd = cfg.get("username", ""), cfg.get("password", "")
     ac = sys.argv[2] if len(sys.argv) > 2 else cfg.get("ac_id")
@@ -544,7 +582,7 @@ def main():
                 print("尚未配置账号，请先运行：python %s setup" % os.path.basename(__file__)); return 1
             print(json.dumps(login(user, pwd, ac), ensure_ascii=False))
         else:
-            print("未知命令：%s\n用法：setup | login | logout | status | discover | auto | install | uninstall" % cmd)
+            print("未知命令：%s\n用法：setup | login | logout | status | discover | log | auto | install | uninstall" % cmd)
             return 1
     except Exception as e:
         print(json.dumps({"error": "exception", "msg": str(e), "base": BASE}, ensure_ascii=False))
